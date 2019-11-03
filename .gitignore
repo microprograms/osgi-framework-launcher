@@ -1,0 +1,9 @@
+/target/
+.project
+.classpath
+/.settings/
+/bin/
+/bundle/
+/felix-cache/
+/lib/
+server.nohup.out
