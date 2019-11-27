@@ -1,9 +1,15 @@
 package com.github.microprograms.osgi_framework_launcher;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.apache.felix.main.AutoProcessor;
 import org.apache.felix.main.Main;
@@ -23,7 +29,7 @@ public class OsgiFrameworkLauncher {
 	}
 
 	private static Framework _startFelixAndWaitForStop() throws Exception {
-		Map<String, String> config = Main.loadConfigProperties();
+		Map<String, String> config = loadConfigProperties();
 		FrameworkFactory factory = _getFrameworkFactory();
 		Framework framework = factory.newFramework(config);
 		framework.init();
@@ -31,6 +37,32 @@ public class OsgiFrameworkLauncher {
 		framework.start();
 		framework.waitForStop(0);
 		return framework;
+	}
+
+	private static Map<String, String> loadConfigProperties() {
+		Map<String, String> config = Main.loadConfigProperties();
+		URL moduleConfigDirUrl = OsgiFrameworkLauncher.class.getResource("/module/");
+		if (moduleConfigDirUrl != null) {
+			for (File x : new File(moduleConfigDirUrl.getFile()).listFiles()) {
+				config.putAll(loadConfigProperties(x));
+			}
+		}
+		return config;
+	}
+
+	private static Map<String, String> loadConfigProperties(File configFile) {
+		log.info("loadConfigProperties, configFile={}", configFile);
+		Map<String, String> config = new HashMap<>();
+		Properties properties = new Properties();
+		try (Reader r = new FileReader(configFile)) {
+			properties.load(r);
+			for (Entry<Object, Object> x : properties.entrySet()) {
+				config.put(x.getKey().toString(), x.getValue().toString());
+			}
+		} catch (Exception e) {
+			log.error("loadConfigProperties error", e);
+		}
+		return config;
 	}
 
 	private static FrameworkFactory _getFrameworkFactory() throws Exception {
